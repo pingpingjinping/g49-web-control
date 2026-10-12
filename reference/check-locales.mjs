@@ -1,6 +1,6 @@
 // Locale integrity checker: run `node reference/check-locales.mjs` after
 // adding or editing strings. It verifies:
-//  1. en/zh dictionaries have identical key sets (no missing, no extras)
+//  1. en/zh/ko dictionaries have identical key sets (no missing, no extras)
 //  2. every key referenced via t("...") or data-i18n*="..." in the sources
 //     exists in the dictionaries
 //  3. every dynamic template usage (t(`prefix.${x}`)) has at least one
@@ -17,6 +17,7 @@ const htmlPath = path.join(root, "index.html");
 const toUrl = (p) => url.pathToFileURL(p).href;
 const { en } = await import(toUrl(path.join(srcDir, "locales", "en.js")));
 const { zh } = await import(toUrl(path.join(srcDir, "locales", "zh.js")));
+const { ko } = await import(toUrl(path.join(srcDir, "locales", "ko.js")));
 
 let failures = 0;
 const fail = (msg) => {
@@ -30,11 +31,19 @@ const enKeys = new Set(Object.keys(en));
 const zhKeys = new Set(Object.keys(zh));
 for (const k of enKeys) if (!zhKeys.has(k)) fail(`zh missing key: ${k}`);
 for (const k of zhKeys) if (!enKeys.has(k)) fail(`zh extra key (not in en): ${k}`);
+const koKeys = new Set(Object.keys(ko));
+for (const k of enKeys) if (!koKeys.has(k)) fail(`ko missing key: ${k}`);
+for (const k of koKeys) if (!enKeys.has(k)) fail(`ko extra key (not in en): ${k}`);
+for (const [k, v] of Object.entries(ko)) {
+  if (typeof v !== "string" || !v.trim()) fail(`ko value empty: ${k}`);
+  const vars = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
+  if (vars(v) !== vars(en[k] || "")) fail(`ko placeholder mismatch: ${k}`);
+}
 for (const [k, v] of Object.entries(en)) {
   if (typeof v !== "string" || !v.trim()) fail(`en value empty: ${k}`);
 }
 console.log(
-  `en keys: ${enKeys.size}, zh keys: ${zhKeys.size}, parity: ${enKeys.size === zhKeys.size && [...enKeys].every((k) => zhKeys.has(k)) ? "OK" : "BROKEN"}`,
+  `en keys: ${enKeys.size}, zh keys: ${zhKeys.size}, ko keys: ${koKeys.size}, parity: ${[zhKeys, koKeys].every((other) => enKeys.size === other.size && [...enKeys].every((k) => other.has(k))) ? "OK" : "BROKEN"}`,
 );
 
 // 2/3/4. collect references from sources
@@ -56,7 +65,7 @@ for (const file of jsFiles) {
   }
 }
 const html = fs.readFileSync(htmlPath, "utf8");
-for (const m of html.matchAll(/data-i18n(?:-html|-title|-placeholder)?="([^"]+)"/g)) {
+for (const m of html.matchAll(/data-i18n(?:-html|-title|-placeholder|-aria-label)?="([^"]+)"/g)) {
   staticKeys.add(m[1]);
 }
 const allSourceText = [...jsFiles.map((f) => fs.readFileSync(f, "utf8")), html];
