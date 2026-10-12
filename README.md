@@ -2,7 +2,7 @@
 
 WebHID control center for the **Redragon G49 base** and the **Redragon M916 Pro** gaming mouse (1K and 4K).
 
-**English** | [中文](README.zh-CN.md)
+**English** | [中文](README.zh-CN.md) | [한국어](README.ko-KR.md)
 
 <p align="center">
   <img src="screenshots/en-1.png" width="49%">
