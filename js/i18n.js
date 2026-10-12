@@ -13,13 +13,15 @@
 //   re-renders on locale change.
 import { en } from "./locales/en.js";
 import { zh } from "./locales/zh.js";
+import { ko } from "./locales/ko.js";
 
 export const LOCALES = {
   en: { code: "en", label: "English" },
   zh: { code: "zh", label: "中文" },
+  ko: { code: "ko", label: "한국어" },
 };
 
-const DICTS = { en, zh };
+const DICTS = { en, zh, ko };
 const STORAGE_KEY = "m916_lang";
 const listeners = new Set();
 
@@ -29,6 +31,7 @@ function detectLocale() {
     if (saved && DICTS[saved]) return saved;
   } catch (_) {}
   const lang = (navigator.language || "en").toLowerCase();
+  if (lang.startsWith("ko")) return "ko";
   return lang.startsWith("zh") ? "zh" : "en";
 }
 
@@ -84,6 +87,9 @@ export function applyDomTranslations(root = document) {
   });
   root.querySelectorAll("[data-i18n-title]").forEach((el) => {
     el.setAttribute("title", t(el.getAttribute("data-i18n-title")));
+  });
+  root.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria-label")));
   });
   root.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
